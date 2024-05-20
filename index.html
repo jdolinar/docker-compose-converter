@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Run to Docker Compose</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #commands {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+        }
+        .command-block {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            white-space: pre-wrap; /* Ensure newlines are preserved */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .command-text {
+            flex-grow: 1;
+        }
+        .remove-button {
+            margin-left: 10px;
+        }
+        #output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Convert Docker Run Commands to Docker Compose</h1>
+
+<div id="commands">
+    <textarea id="dockerCommand" placeholder="Enter docker run command here"></textarea>
+    <button onclick="addCommand()">Add Command</button>
+</div>
+
+<div id="commandList"></div>
+
+<button onclick="generateCompose()">Generate Docker Compose</button>
+
+<div id="output">
+    <h2>Docker Compose YAML</h2>
+    <pre id="dockerComposeOutput"></pre>
+</div>
+
+<script>
+    let commands = [];
+
+    function addCommand() {
+        const commandInput = document.getElementById('dockerCommand');
+        const command = commandInput.value.trim();
+
+        if (command.startsWith('docker run')) {
+            commands.push(command);
+            updateCommandList();
+            commandInput.value = '';
+        } else {
+            alert('Please enter a valid docker run command.');
+        }
+    }
+
+    function updateCommandList() {
+        const commandListDiv = document.getElementById('commandList');
+        commandListDiv.innerHTML = '';
+
+        commands.forEach((cmd, index) => {
+            const cmdDiv = document.createElement('div');
+            cmdDiv.className = 'command-block';
+
+            const cmdText = document.createElement('div');
+            cmdText.className = 'command-text';
+            cmdText.textContent = cmd;
+
+            const removeButton = document.createElement('button');
+            removeButton.className = 'remove-button';
+            removeButton.textContent = 'Remove';
+            removeButton.onclick = () => {
+                commands.splice(index, 1);
+                updateCommandList();
+            };
+
+            cmdDiv.appendChild(cmdText);
+            cmdDiv.appendChild(removeButton);
+            commandListDiv.appendChild(cmdDiv);
+        });
+    }
+
+    async function generateCompose() {
+        try {
+            const response = await fetch('/convert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ commands })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                document.getElementById('dockerComposeOutput').textContent = result.docker_compose;
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        } catch (error) {
+            alert('Failed to generate Docker Compose file.');
+        }
+    }
+</script>
+
+</body>
+</html>
